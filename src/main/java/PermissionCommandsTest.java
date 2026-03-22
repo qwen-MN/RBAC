@@ -98,4 +98,3 @@ class PermissionCommandsTest {
         parser.executeCommand(command, scanner, system);
     }
 }
-
