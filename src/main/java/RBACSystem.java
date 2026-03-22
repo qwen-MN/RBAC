@@ -6,12 +6,16 @@ public class RBACSystem {
     private final RoleManager roleManager;
     private final AssignmentManager assignmentManager;
     private String currentUser;
+    private final AuditLog auditLog;
+    private final ReportGenerator reportGenerator;
 
     public RBACSystem() {
         this.userManager = new UserManager();
         this.roleManager = new RoleManager();
         this.assignmentManager = new AssignmentManager(userManager, roleManager);
         this.currentUser = null;
+        this.auditLog = new AuditLog();
+        this.reportGenerator = new ReportGenerator();
     }
 
     public void initialize() {
@@ -96,5 +100,13 @@ public class RBACSystem {
     }
     public void setCurrentUser(String username) {
         this.currentUser = username;
+    }
+
+    public AuditLog getAuditLog() {
+        return auditLog;
+    }
+
+    public ReportGenerator getReportGenerator() {
+        return reportGenerator;
     }
 }
