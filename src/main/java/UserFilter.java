@@ -1,12 +1,31 @@
-@FunctionalInterface
-public interface UserFilter {
-    boolean test(User user);
+import java.util.Locale;
 
-    default UserFilter and(UserFilter other) {
-        return user -> this.test(user) && other.test(user);
+public class UserFilters {
+
+    public static UserFilter byUsername(String username) {
+        return user -> user.username().equals(username);
     }
 
-    default UserFilter or(UserFilter other) {
-        return user -> this.test(user) || other.test(user);
+    public static UserFilter byUsernameContains(String substring) {
+        String normalized = substring.toLowerCase(Locale.ROOT);
+        return user -> user.username().toLowerCase(Locale.ROOT).contains(normalized);
+    }
+
+    public static UserFilter byEmail(String email) {
+        return user -> user.email().equals(email);
+    }
+
+    public static UserFilter byEmailDomain(String domain) {
+        String normalizedDomain = domain.toLowerCase(Locale.ROOT);
+        if (!normalizedDomain.startsWith("@")) {
+            normalizedDomain = "@" + normalizedDomain;
+        }
+
+        final String finalDomain = normalizedDomain;
+        return user -> user.email().toLowerCase(Locale.ROOT).endsWith(finalDomain);
+    }
+
+    public static UserFilter byFullNameContains(String substring) {
+        return user -> user.fullName().toLowerCase(Locale.ROOT).contains(substring.toLowerCase(Locale.ROOT));
     }
 }

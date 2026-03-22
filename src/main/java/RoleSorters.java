@@ -7,6 +7,7 @@ public class RoleSorters {
     }
 
     public static Comparator<Role> byPermissionCount() {
-        return Comparator.comparingInt(role -> role.getPermissions().size());
+        return (role1, role2) ->
+                Integer.compare(role2.getPermissions().size(), role1.getPermissions().size());
     }
 }

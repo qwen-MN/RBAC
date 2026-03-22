@@ -25,6 +25,10 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             );
         }
 
+        if (!roleManager.exists(assignment.role().name())) {
+            throw new IllegalArgumentException("Cannot assign role: role '" + assignment.role().name() + "' does not exist");
+        }
+
         boolean hasActiveAssignment = assignments.values().stream()
                 .anyMatch(existing ->
                         existing.isActive() &&
@@ -141,6 +145,22 @@ public class AssignmentManager implements Repository<RoleAssignment> {
             throw new IllegalArgumentException(
                     "Only temporary assignments can be extended");
         }
+    }
+
+    public void revokeAssignment(String assignmentId) {
+        RoleAssignment assignment = findById(assignmentId)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Assignment with ID '" + assignmentId + "' not found"
+                ));
+
+        if (!(assignment instanceof PermanentAssignment)) {
+            throw new IllegalArgumentException(
+                    "Only permanent assignments can be revoked. " +
+                            "Assignment ID: " + assignmentId + ", Type: " + assignment.assignmentType()
+            );
+        }
+
+        ((PermanentAssignment) assignment).revoke();
     }
 
     @Override

@@ -1,3 +1,5 @@
+import java.util.function.Predicate;
+
 @FunctionalInterface
 public interface RoleFilter {
     boolean test(Role role);
