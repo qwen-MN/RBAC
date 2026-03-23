@@ -7,7 +7,7 @@ on:
     branches: [main, dev]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
     
     steps:
@@ -21,11 +21,28 @@ jobs:
         distribution: 'temurin'
         cache: maven
       
-    - name: Build with Maven
+    - name: Build project
       run: mvn clean compile -B
       
-    - name: Run tests
+    - name: Run unit tests
       run: mvn test -B
       
-    - name: Generate coverage report
+    - name: Generate test report
+      run: mvn surefire-report:report -B
+      
+    - name: Generate code coverage report
       run: mvn jacoco:report -B
+      
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: target/surefire-reports/
+      
+    - name: Upload coverage report
+      uses: actions/upload-artifact@v3
+      if: success()
+      with:
+        name: coverage-report
+        path: target/site/jacoco/
