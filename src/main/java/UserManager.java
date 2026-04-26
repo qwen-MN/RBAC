@@ -1,98 +1,130 @@
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.function.Predicate;
 
-public class UserManager implements Repository<User>{
+public class UserManager {
+    private final Map<String, User> usersByUsername = new ConcurrentHashMap<>();
+    private final Map<String, User> usersByEmail = new ConcurrentHashMap<>();
+    private final ReadWriteLock lock = new ReentrantReadWriteLock();
 
-    private final Map<String, User> users = new HashMap<>();
-
-    @Override
     public void add(User user) {
-        if (exists(user.username())) {
-            throw new IllegalArgumentException("User with username '" + user.username() + "' already exists");
+        synchronized (this) {
+            if (usersByUsername.containsKey(user.username())) {
+                throw new IllegalArgumentException("User already exists: " + user.username());
+            }
+            usersByUsername.put(user.username(), user);
+            usersByEmail.put(user.email(), user);
         }
-        users.put(user.username(), user);
     }
 
-    @Override
+    public void update(String username, String fullName, String email) {
+        lock.writeLock().lock();
+        try {
+            User user = usersByUsername.get(username);
+            if (user == null) {
+                throw new NoSuchElementException("User not found: " + username);
+            }
+
+            if (!user.email().equals(email) && usersByEmail.containsKey(email)) {
+                throw new IllegalArgumentException("Email already exists: " + email);
+            }
+
+            if (!ValidationUtils.isValidEmail(email)) {
+                throw new IllegalArgumentException("Invalid email format: " + email);
+            }
+
+            User updatedUser = User.create(username, fullName, email);
+
+            usersByEmail.remove(user.email());
+            usersByUsername.put(username, updatedUser);
+            usersByEmail.put(email, updatedUser);
+        } finally {
+            lock.writeLock().unlock();
+        }
+    }
+
     public boolean remove(User user) {
-        return users.remove(user.username()) != null;
-    }
-
-    @Override
-    public Optional<User> findById(String username) {
-        return Optional.ofNullable(users.get(username));
-    }
-
-    @Override
-    public List<User> findAll() {
-        return new ArrayList<>(users.values());
-    }
-
-    @Override
-    public int count() {
-        return users.size();
-    }
-
-    @Override
-    public void clear() {
-        users.clear();
-    }
-
-    public Optional<User> findByUsername(String username) {
-        return findById(username);
-    }
-
-    public Optional<User> findByEmail(String email) {
-        return users.values().stream()
-                .filter(user -> user.email().equals(email))
-                .findFirst();
-    }
-
-    public List<User> findByFilter(UserFilter filter) {
-        return findAll(filter, null);
-    }
-
-    public List<User> findAll(UserFilter filter, Comparator<User> sorter) {
-        Stream<User> stream = users.values().stream();
-
-        if (filter != null) {
-            stream = stream.filter(filter::test);
+        lock.writeLock().lock();
+        try {
+            boolean userExists = usersByUsername.containsKey(user.username());
+            if (userExists) {
+                usersByUsername.remove(user.username());
+                usersByEmail.remove(user.email());
+            }
+            return userExists;
+        } finally {
+            lock.writeLock().unlock();
         }
-
-        if (sorter != null) {
-            stream = stream.sorted(sorter);
-        }
-
-        return stream.collect(Collectors.toList());
     }
 
     public boolean exists(String username) {
-        return users.containsKey(username);
+        synchronized (this) {
+            return usersByUsername.containsKey(username);
+        }
     }
 
-    public void update(String username, String newFullName, String newEmail) {
-        User existing = findById(username)
-                .orElseThrow(() -> new NoSuchElementException(
-                        "User '" + username + "' not found"));
+    public Optional<User> findByUsername(String username) {
+        synchronized (this) {
+            return Optional.ofNullable(usersByUsername.get(username));
+        }
+    }
 
+    public Optional<User> findByEmail(String email) {
+        return Optional.ofNullable(usersByEmail.get(email));
+    }
+
+    public List<User> findAll(Predicate<User> filter, Comparator<User> sorter) {
+        lock.readLock().lock();
         try {
-            User updated = User.create(username, newFullName, newEmail);
-            users.put(username, updated);
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid update data: " + e.getMessage());
+            return usersByUsername.values().stream()
+                    .filter(filter != null ? filter : u -> true)
+                    .sorted(sorter != null ? sorter : (a, b) -> 0)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public List<User> findByFilterParallel(Predicate<User> filter, Comparator<User> sorter) {
+        lock.readLock().lock();
+        try {
+            return usersByUsername.values().stream()
+                    .filter(filter != null ? filter : u -> true)
+                    .sorted(sorter != null ? sorter : (a, b) -> 0)
+                    .collect(Collectors.toList());
+        } finally {
+            lock.readLock().unlock();
+        }
+    }
+
+    public int count() {
+        return usersByUsername.size();
+    }
+
+    public void clear() {
+        lock.writeLock().lock();
+        try {
+            usersByUsername.clear();
+            usersByEmail.clear();
+        } finally {
+            lock.writeLock().unlock();
         }
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof UserManager that)) return false;
-        return Objects.equals(users, that.users);
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+
+        UserManager that = (UserManager) obj;
+        return Objects.equals(usersByUsername, that.usersByUsername);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(users);
+        return Objects.hash(usersByUsername);
     }
 }
