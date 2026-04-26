@@ -25,7 +25,6 @@ public class ReportGenerator {
             return report.toString();
         }
 
-        // Параллельная обработка пользователей
         Map<User, List<String>> userRolesMap = users.parallelStream()
                 .collect(Collectors.toConcurrentMap(
                         user -> user,
@@ -72,7 +71,6 @@ public class ReportGenerator {
             return report.toString();
         }
 
-        // Параллельная обработка ролей
         Map<Role, Integer> roleUserCountMap = roles.parallelStream()
                 .collect(Collectors.toConcurrentMap(
                         role -> role,
@@ -116,7 +114,6 @@ public class ReportGenerator {
             return report.toString();
         }
 
-        // Сбор всех ресурсов параллельно
         Set<String> resources = users.parallelStream()
                 .flatMap(user -> assignmentManager.getUserPermissions(user).stream())
                 .map(Permission::resource)
@@ -127,7 +124,6 @@ public class ReportGenerator {
             return report.toString();
         }
 
-        // Параллельная проверка прав доступа
         Map<User, Set<String>> userResourcesMap = users.parallelStream()
                 .collect(Collectors.toConcurrentMap(
                         user -> user,

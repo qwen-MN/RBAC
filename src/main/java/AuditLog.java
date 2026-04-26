@@ -27,7 +27,6 @@ public class AuditLog {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     public AuditLog() {
-        // Запуск фонового потока для обработки логов
         logProcessorThread = new Thread(this::processLogQueue);
         logProcessorThread.setDaemon(true);
         logProcessorThread.start();
@@ -38,7 +37,7 @@ public class AuditLog {
             try {
                 String timestamp = LocalDateTime.now().format(TIMESTAMP_FORMATTER);
                 AuditEntry entry = new AuditEntry(timestamp, action, performer, target, details);
-                logQueue.put(entry); // Блокирующая очередь
+                logQueue.put(entry);
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
             }
@@ -48,7 +47,7 @@ public class AuditLog {
     private void processLogQueue() {
         while (running.get() || !logQueue.isEmpty()) {
             try {
-                AuditEntry entry = logQueue.take(); // Блокирующее извлечение
+                AuditEntry entry = logQueue.take();
                 synchronized (entries) {
                     entries.add(entry);
                 }
@@ -134,7 +133,7 @@ public class AuditLog {
         running.set(false);
         logProcessorThread.interrupt();
         try {
-            logProcessorThread.join(5000); // Ждём максимум 5 секунд
+            logProcessorThread.join(5000);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
