@@ -171,7 +171,7 @@ public class AssignmentManager {
 
             RoleAssignment assignment = assignmentOpt.get();
             if (assignment instanceof PermanentAssignment permanent) {
-                permanent.revoke(); // Делает назначение неактивным, а не удаляет
+                permanent.revoke();
             } else {
                 throw new IllegalArgumentException("Cannot revoke temporary assignment directly");
             }
