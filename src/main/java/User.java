@@ -1,7 +1,7 @@
 import java.util.Objects;
 import java.util.regex.Pattern;
 
-public record User(String username, String fullName, String email) {
+public record User(String username, String fullName, String email, String createdAt) {
     private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,20}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@]+@[^@]+\\.[^@]+$");
 
@@ -26,7 +26,15 @@ public record User(String username, String fullName, String email) {
     }
 
     public static User create(String username, String fullName, String email) {
-        return new User(username, fullName, email);
+        ValidationUtils.requireNonEmpty(username, "Username");
+        ValidationUtils.requireNonEmpty(fullName, "Full name");
+        if (!ValidationUtils.isValidEmail(email)) {
+            throw new IllegalArgumentException("Invalid email format: " + email);
+        }
+        if (!ValidationUtils.isValidUsername(username)) {
+            throw new IllegalArgumentException("Invalid username format: " + username);
+        }
+        return new User(username, fullName, email, DateUtils.getCurrentDate());
     }
 
     public String format() {

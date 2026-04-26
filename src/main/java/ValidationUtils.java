@@ -2,12 +2,12 @@ import java.util.regex.Pattern;
 
 public class ValidationUtils {
 
-    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,20}$");
+    private static final Pattern USERNAME_PATTERN = Pattern.compile("^[a-zA-Z][a-zA-Z0-9_]*$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^@]+@[^@]+\\.[^@]+$");
     private static final Pattern DATE_PATTERN = Pattern.compile("^\\d{4}-\\d{2}-\\d{2}( \\d{2}:\\d{2})?$");
 
     public static boolean isValidUsername(String username) {
-        if (username == null || username.isEmpty()) {
+        if (username == null || username.length() < 3 || username.length() > 20) {
             return false;
         }
         return USERNAME_PATTERN.matcher(username).matches();

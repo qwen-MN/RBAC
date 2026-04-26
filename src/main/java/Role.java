@@ -7,19 +7,14 @@ public class Role {
     private final String id;
     private final String name;
     private final String description;
+    private final String createdAt;
     private final Set<Permission> permissions = new HashSet<>();
 
     public Role(String name, String description) {
-        Objects.requireNonNull(name, "Name cannot be null");
-        Objects.requireNonNull(description, "Description cannot be null");
-
-        if (name.isBlank() || description.isBlank()) {
-            throw new IllegalArgumentException("Name and description must be non-empty");
-        }
-
-        this.id = "role_" + ID_COUNTER.incrementAndGet();
-        this.name = name.trim();
-        this.description = description.trim();
+        this.id = UUID.randomUUID().toString();
+        this.name = name;
+        this.description = description;
+        this.createdAt = DateUtils.getCurrentDate();
     }
 
     public String id() {
@@ -64,6 +59,10 @@ public class Role {
 
     public Set<Permission> getPermissions() {
         return Set.copyOf(permissions);
+    }
+
+    public String getCreatedAt() {
+        return createdAt;
     }
 
     @Override

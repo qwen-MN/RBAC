@@ -8,6 +8,7 @@ public class RBACSystem {
     private String currentUser;
     private final AuditLog auditLog;
     private final ReportGenerator reportGenerator;
+    private final BackgroundExecutor backgroundExecutor;
 
     public RBACSystem() {
         this.userManager = new UserManager();
@@ -16,40 +17,59 @@ public class RBACSystem {
         this.currentUser = null;
         this.auditLog = new AuditLog();
         this.reportGenerator = new ReportGenerator();
+        this.backgroundExecutor = new BackgroundExecutor();
     }
 
     public void initialize() {
-        Permission readReports = new Permission("READ", "reports", "View reports");
-        Permission writeReports = new Permission("WRITE", "reports", "Edit reports");
-        Permission deleteReports = new Permission("DELETE", "reports", "Delete reports");
-        Permission readDashboards = new Permission("READ", "dashboards", "View dashboards");
+        Role adminRole = getAdminRole();
 
-        Role adminRole = new Role("Admin", "Full access");
-        adminRole.addPermission(readReports);
-        adminRole.addPermission(writeReports);
-        adminRole.addPermission(deleteReports);
-        adminRole.addPermission(readDashboards);
+        Role managerRole = getManagerRole();
 
-        Role managerRole = new Role("Manager", "Manage reports");
-        managerRole.addPermission(readReports);
-        managerRole.addPermission(writeReports);
-
-        Role viewerRole = new Role("Viewer", "View-only access");
-        viewerRole.addPermission(readReports);
-        viewerRole.addPermission(readDashboards);
+        Role viewerRole = new Role("Viewer", "Только просмотр информации");
+        viewerRole.addPermission(new Permission("READ", "users", "Просмотр списка пользователей"));
+        viewerRole.addPermission(new Permission("READ", "reports", "Просмотр отчетов"));
 
         roleManager.add(adminRole);
         roleManager.add(managerRole);
         roleManager.add(viewerRole);
 
-        User admin = User.create("admin", "System Administrator", "admin@rbac.system");
-        userManager.add(admin);
+        User adminUser = User.create("admin", "Системный Администратор", "admin@example.com");
+        userManager.add(adminUser);
 
-        AssignmentMetadata meta = AssignmentMetadata.now("system", "Initial setup");
-        PermanentAssignment assignment = new PermanentAssignment(admin, adminRole, meta);
-        assignmentManager.add(assignment);
+        AssignmentMetadata metadata = AssignmentMetadata.now("system", "Инициализация системы");
+        RoleAssignment adminAssignment = new PermanentAssignment(adminUser, adminRole, metadata);
+        assignmentManager.add(adminAssignment);
+    }
 
-        setCurrentUser("admin");
+    private static Role getManagerRole() {
+        Role managerRole = new Role("Manager", "Управление пользователями и отчетами");
+        managerRole.addPermission(new Permission("READ", "users", "Чтение пользователей"));
+        managerRole.addPermission(new Permission("WRITE", "users", "Создание/редактирование пользователей"));
+        managerRole.addPermission(new Permission("READ", "reports", "Просмотр отчетов"));
+        managerRole.addPermission(new Permission("EXPORT", "reports", "Экспорт отчетов"));
+        managerRole.addPermission(new Permission("ASSIGN", "roles", "Назначение ролей пользователям"));
+        return managerRole;
+    }
+
+    private static Role getAdminRole() {
+        Role adminRole = new Role("Admin", "Полный доступ ко всем функциям системы");
+        adminRole.addPermission(new Permission("READ", "users", "Чтение пользователей"));
+        adminRole.addPermission(new Permission("WRITE", "users", "Создание/редактирование пользователей"));
+        adminRole.addPermission(new Permission("DELETE", "users", "Удаление пользователей"));
+        adminRole.addPermission(new Permission("READ", "roles", "Чтение ролей"));
+        adminRole.addPermission(new Permission("WRITE", "roles", "Создание/редактирование ролей"));
+        adminRole.addPermission(new Permission("DELETE", "roles", "Удаление ролей"));
+        adminRole.addPermission(new Permission("ASSIGN", "roles", "Назначение ролей пользователям"));
+        adminRole.addPermission(new Permission("REVOKE", "roles", "Отзыв ролей у пользователей"));
+        adminRole.addPermission(new Permission("READ", "reports", "Просмотр всех отчетов"));
+        adminRole.addPermission(new Permission("WRITE", "reports", "Редактирование отчетов"));
+        adminRole.addPermission(new Permission("DELETE", "reports", "Удаление отчетов"));
+        adminRole.addPermission(new Permission("READ", "dashboards", "Просмотр дашбордов"));
+        adminRole.addPermission(new Permission("WRITE", "dashboards", "Редактирование дашбордов"));
+        adminRole.addPermission(new Permission("DELETE", "dashboards", "Удаление дашбордов"));
+        adminRole.addPermission(new Permission("EXPORT", "reports", "Экспорт отчетов"));
+        adminRole.addPermission(new Permission("AUDIT", "system", "Просмотр аудит-лога"));
+        return adminRole;
     }
 
     public String generateStatistics() {
@@ -96,7 +116,7 @@ public class RBACSystem {
         return assignmentManager;
     }
     public String getCurrentUser() {
-        return currentUser;
+        return currentUser != null ? currentUser : "system";
     }
     public void setCurrentUser(String username) {
         this.currentUser = username;
@@ -108,5 +128,14 @@ public class RBACSystem {
 
     public ReportGenerator getReportGenerator() {
         return reportGenerator;
+    }
+
+    public BackgroundExecutor getBackgroundExecutor() {
+        return backgroundExecutor;
+    }
+
+    public void shutdown() {
+        auditLog.shutdown();
+        backgroundExecutor.shutdown();
     }
 }

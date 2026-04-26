@@ -65,13 +65,13 @@ public class FormatUtils {
         }
 
         StringBuilder box = new StringBuilder();
-        box.append("|").append("-".repeat(maxWidth + 2)).append("|\n");
+        box.append("┌").append("─".repeat(maxWidth + 2)).append("┐\n");
 
         for (String line : lines) {
-            box.append("| ").append(padRight(line, maxWidth)).append(" |\n");
+            box.append("│ ").append(padRight(line, maxWidth)).append(" │\n");
         }
 
-        box.append("|").append("-".repeat(maxWidth + 2)).append("|");
+        box.append("└").append("─".repeat(maxWidth + 2)).append("┘");
 
         return box.toString();
     }

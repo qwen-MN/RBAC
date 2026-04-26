@@ -7,7 +7,8 @@ public class UserFilters {
     }
 
     public static UserFilter byUsernameContains(String substring) {
-        return user -> user.username().toLowerCase(Locale.ROOT).contains(substring.toLowerCase(Locale.ROOT));
+        String normalized = substring.toLowerCase(Locale.ROOT);
+        return user -> user.username().toLowerCase(Locale.ROOT).contains(normalized);
     }
 
     public static UserFilter byEmail(String email) {
@@ -15,7 +16,13 @@ public class UserFilters {
     }
 
     public static UserFilter byEmailDomain(String domain) {
-        return user -> user.email().endsWith(domain);
+        String normalizedDomain = domain.toLowerCase(Locale.ROOT);
+        if (!normalizedDomain.startsWith("@")) {
+            normalizedDomain = "@" + normalizedDomain;
+        }
+
+        final String finalDomain = normalizedDomain;
+        return user -> user.email().toLowerCase(Locale.ROOT).endsWith(finalDomain);
     }
 
     public static UserFilter byFullNameContains(String substring) {

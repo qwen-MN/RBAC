@@ -1,5 +1,7 @@
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.util.Locale;
 import java.util.Objects;
 
 public class TemporaryAssignment extends AbstractRoleAssignment {
@@ -7,7 +9,7 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm");
 
     private String expiresAt;
-    private boolean autoRenew;
+    boolean autoRenew;
 
     public TemporaryAssignment(User user, Role role, AssignmentMetadata metadata,
                                String expiresAt, boolean autoRenew) {
@@ -16,14 +18,23 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         this.autoRenew = autoRenew;
     }
 
-    private void setExpiresAt(String expiresAt) {
-        Objects.requireNonNull(expiresAt, "ExpiresAt cannot be null");
+    public String getExpiresAt() {
+        return expiresAt;
+    }
+
+    void setExpiresAt(String expiresAt) {
+        String normalized = expiresAt.trim()
+                .replace("\r", "")
+                .replace("\n", "");
+
         try {
-            LocalDateTime.parse(expiresAt, FORMATTER);
-            this.expiresAt = expiresAt;
-        } catch (Exception e) {
-            throw new IllegalArgumentException("Invalid date format. Use 'yyyy-MM-dd HH:mm'");
+            LocalDateTime.parse(normalized,
+                    DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm", Locale.ROOT));
+        } catch (DateTimeParseException e) {
+            throw new IllegalArgumentException(
+                    "Invalid date format. Use 'yyyy-MM-dd HH:mm' (e.g., '2026-12-31 23:59')");
         }
+        this.expiresAt = normalized;
     }
 
     @Override
@@ -44,6 +55,10 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
 
     public boolean isExpired() {
         return !isActive();
+    }
+
+    public String expiresAt() {
+        return expiresAt;
     }
 
     public String getTimeRemaining() {
@@ -75,5 +90,9 @@ public class TemporaryAssignment extends AbstractRoleAssignment {
         String expiryInfo = String.format("Expires at: %s | Auto-renew: %s | Remaining: %s",
                 expiresAt, autoRenew ? "YES" : "NO", getTimeRemaining());
         return base + "\n" + expiryInfo;
+    }
+
+    public boolean autoRenew() {
+        return autoRenew;
     }
 }

@@ -17,8 +17,10 @@ public record AssignmentMetadata(String assignedBy, String assignedAt, String re
     }
 
     public static AssignmentMetadata now(String assignedBy, String reason) {
-        String now = LocalDateTime.now().format(FORMATTER);
-        return new AssignmentMetadata(assignedBy, now, reason);
+        if (assignedBy == null || assignedBy.trim().isEmpty()) {
+            assignedBy = "system";
+        }
+        return new AssignmentMetadata(assignedBy, DateUtils.getCurrentDate(), reason);
     }
 
     public String format() {
