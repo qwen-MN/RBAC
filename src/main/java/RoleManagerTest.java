@@ -142,8 +142,9 @@ class RoleManagerTest {
         roleManager.add(adminRole);
         roleManager.add(editorRole);
 
-        List<Role> filtered = roleManager.findByFilter(
-                RoleFilters.hasPermission("READ", "reports")
+        List<Role> filtered = roleManager.findByFilterParallel(
+                role -> role.hasPermission("READ", "reports"),
+                null
         );
 
         assertEquals(1, filtered.size());
@@ -161,7 +162,7 @@ class RoleManagerTest {
         roleManager.add(editorRole);
 
         List<Role> result = roleManager.findAll(
-                RoleFilters.hasAtLeastNPermissions(1),
+                role -> !role.getPermissions().isEmpty(),
                 RoleSorters.byName()
         );
 
@@ -195,7 +196,7 @@ class RoleManagerTest {
         roleManager.clear();
 
         assertEquals(0, roleManager.count());
-        assertTrue(roleManager.findAll().isEmpty());
+        assertTrue(roleManager.findAll(null, null).isEmpty());
     }
 
     @Test
@@ -210,7 +211,7 @@ class RoleManagerTest {
         Optional<Role> foundByName = roleManager.findByName("Admin");
         assertTrue(foundByName.isPresent());
 
-        List<Role> all = roleManager.findAll();
+        List<Role> all = roleManager.findAll(null, null);
         assertEquals(1, all.size());
 
         boolean removed = roleManager.remove(adminRole);

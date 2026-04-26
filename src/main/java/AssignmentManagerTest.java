@@ -216,12 +216,13 @@ class AssignmentManagerTest {
         PermanentAssignment assignment2 = new PermanentAssignment(user2, editorRole, meta2);
         assignmentManager.add(assignment2);
 
-        List<RoleAssignment> filtered = assignmentManager.findByFilter(
-                AssignmentFilters.byUsername("john")
+        List<RoleAssignment> filtered = assignmentManager.findByFilterParallel(
+                assignment -> assignment.user().username().equalsIgnoreCase("john"),
+                null
         );
 
         assertEquals(1, filtered.size());
-        assertEquals(assignment1, filtered.get(0));
+        assertEquals(assignment1, filtered.getFirst());
     }
 
     @Test
@@ -233,8 +234,10 @@ class AssignmentManagerTest {
 
         assignmentManager.revokeAssignment(assignment.assignmentId());
 
-        assertFalse(assignment.isActive());
-        assertTrue(assignmentManager.getExpiredAssignments().contains(assignment));
+        var revokedAssignment = assignmentManager.findById(assignment.assignmentId()).get();
+        assertFalse(revokedAssignment.isActive());
+
+        assertTrue(assignmentManager.getExpiredAssignments().contains(revokedAssignment));
     }
 
     @Test
@@ -250,7 +253,8 @@ class AssignmentManagerTest {
         String newExpiry = "2027-12-31 23:59";
         assignmentManager.extendTemporaryAssignment(assignment.assignmentId(), newExpiry);
 
-        assertEquals(newExpiry, ((TemporaryAssignment) assignment).getExpiresAt());
+        var updatedAssignment = assignmentManager.findById(assignment.assignmentId()).get();
+        assertEquals(newExpiry, ((TemporaryAssignment) updatedAssignment).expiresAt());
     }
 
     @Test
@@ -265,7 +269,7 @@ class AssignmentManagerTest {
         var found = assignmentManager.findById(assignment.assignmentId());
         assertTrue(found.isPresent());
 
-        List<RoleAssignment> all = assignmentManager.findAll();
+        List<RoleAssignment> all = assignmentManager.findAll(null, null);
         assertEquals(1, all.size());
 
         boolean removed = assignmentManager.remove(assignment);

@@ -48,8 +48,10 @@ class PermissionCommandsTest {
         assertTrue(output.contains("READ"), "Should show READ permission");
         assertTrue(output.contains("WRITE"), "Should show WRITE permission");
         assertTrue(output.contains("DELETE"), "Should show DELETE permission");
-        assertTrue(output.contains("dashboards"), "Should show dashboards");
+        assertTrue(output.contains("users"), "Should show users");
+        assertTrue(output.contains("roles"), "Should show roles");
         assertTrue(output.contains("reports"), "Should show reports");
+        assertTrue(output.contains("dashboards"), "Should show dashboards");
     }
 
     @Test
@@ -58,7 +60,7 @@ class PermissionCommandsTest {
         executeCommand("permissions-user", "admin");
 
         String output = outputStream.toString();
-        assertTrue(output.contains("resource:"), "Should show resource grouping");
+        assertTrue(output.contains("Ресурс:"), "Should show resource grouping");
         assertTrue(output.contains("reports"), "Should show reports resource");
         assertTrue(output.contains("dashboards"), "Should show dashboards resource");
     }
@@ -76,7 +78,7 @@ class PermissionCommandsTest {
     @Test
     @DisplayName("permissions-check should verify user does not have permission")
     void testPermissionsCheckNoPermission() {
-        executeCommand("permissions-check", "admin", "DELETE", "dashboards");
+        executeCommand("permissions-check", "admin", "EXECUTE", "reports");
 
         String output = outputStream.toString();
         assertTrue(output.contains("Нет"), "Should deny permission");

@@ -17,8 +17,10 @@ class AuditLogTest {
 
     @Test
     @DisplayName("log() should add entry to log")
-    void testLogEntryAdded() {
+    void testLogEntryAdded() throws InterruptedException {
         auditLog.log("CREATE_USER", "admin", "john", "Created user john");
+
+        auditLog.waitForProcessing();
 
         List<AuditLog.AuditEntry> entries = auditLog.getAll();
         assertEquals(1, entries.size());
@@ -33,10 +35,12 @@ class AuditLogTest {
 
     @Test
     @DisplayName("getByPerformer() should filter by performer")
-    void testGetByPerformer() {
+    void testGetByPerformer() throws InterruptedException {
         auditLog.log("CREATE_USER", "admin", "john", "Created user john");
         auditLog.log("CREATE_USER", "admin", "jane", "Created user jane");
         auditLog.log("CREATE_USER", "system", "test", "System user");
+
+        auditLog.waitForProcessing();
 
         List<AuditLog.AuditEntry> adminEntries = auditLog.getByPerformer("admin");
         assertEquals(2, adminEntries.size());
@@ -47,10 +51,12 @@ class AuditLogTest {
 
     @Test
     @DisplayName("getByAction() should filter by action")
-    void testGetByAction() {
+    void testGetByAction() throws InterruptedException {
         auditLog.log("CREATE_USER", "admin", "john", "Created user john");
         auditLog.log("DELETE_USER", "admin", "john", "Deleted user john");
         auditLog.log("CREATE_USER", "admin", "jane", "Created user jane");
+
+        auditLog.waitForProcessing();
 
         List<AuditLog.AuditEntry> createEntries = auditLog.getByAction("CREATE_USER");
         assertEquals(2, createEntries.size());
@@ -61,9 +67,11 @@ class AuditLogTest {
 
     @Test
     @DisplayName("getAll() should return all entries")
-    void testGetAll() {
+    void testGetAll() throws InterruptedException {
         auditLog.log("CREATE_USER", "admin", "john", "Created user john");
         auditLog.log("CREATE_ROLE", "admin", "Editor", "Created role Editor");
+
+        auditLog.waitForProcessing();
 
         List<AuditLog.AuditEntry> entries = auditLog.getAll();
         assertEquals(2, entries.size());

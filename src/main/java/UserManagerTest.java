@@ -166,8 +166,9 @@ class UserManagerTest {
         userManager.add(testUser2);
         userManager.add(User.create("bob", "Bob Johnson", "bob@company.com"));
 
-        List<User> filtered = userManager.findByFilter(
-                UserFilters.byEmailDomain("@example.com")
+        List<User> filtered = userManager.findByFilterParallel(
+                user -> user.email().toLowerCase().endsWith("@example.com"),
+                null
         );
 
         assertEquals(2, filtered.size());
@@ -183,7 +184,7 @@ class UserManagerTest {
         userManager.add(testUser1);
 
         List<User> result = userManager.findAll(
-                UserFilters.byEmailDomain("@example.com"),
+                user -> user.email().toLowerCase().endsWith("@example.com"),
                 UserSorters.byUsername()
         );
 
@@ -217,7 +218,7 @@ class UserManagerTest {
         userManager.clear();
 
         assertEquals(0, userManager.count());
-        assertTrue(userManager.findAll().isEmpty());
+        assertTrue(userManager.findAll(null, null).isEmpty());
     }
 
     @Test
@@ -243,10 +244,10 @@ class UserManagerTest {
         userManager.add(testUser1);
         assertEquals(1, userManager.count());
 
-        Optional<User> found = userManager.findById("john");
+        Optional<User> found = userManager.findByUsername("john");
         assertTrue(found.isPresent());
 
-        List<User> all = userManager.findAll();
+        List<User> all = userManager.findAll(null, null);
         assertEquals(1, all.size());
 
         boolean removed = userManager.remove(testUser1);
